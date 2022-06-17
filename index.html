@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en"><!--____________________________________________________________html -->
+
+<head><!--______________________________________________________________________head -->
+
+<title>Innubatec</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ style -->
+<style>
+
+body {
+  margin: 0;
+  overflow: overlay;
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+.space {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin-top: 3000px;
+  background-color: red;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  text-align: center;
+  font-size: 18px;
+}
+
+::-webkit-scrollbar {
+  width: 20px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey;
+  border-radius: 10px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: MidnightBlue;
+  border-radius: 10px;
+
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: DarkBlue;
+}
+
+</style>
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ /style -->
+
+</head><!--_____________________________________________________________________/head -->
+
+<body><!--______________________________________________________________________body -->
+
+<div class="space"></div>
+
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ importmap -->
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.139.0/build/three.module.js",
+      "TWEEN": "https://threejs.org/examples/jsm/libs/tween.module.min.js",
+      "FontLoader": "https://threejs.org/examples/jsm/loaders/FontLoader.js",
+      "TextGeometry": "https://threejs.org/examples/jsm/geometries/TextGeometry.js",
+      "three.interactive": "https://cdn.jsdelivr.net/npm/three.interactive@1.3.0/build/three.interactive.js"
+    }
+  }
+</script>
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ /importmap -->
+
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ other modules -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.js"></script>
+<script src="https://smtpjs.com/v3/smtp.js"></script>
+
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ /other modules -->
+
+<script type="module">//________________________________________________________script
+
+//______________________________________________________________________________imports
+
+import * as THREE from 'three';
+import { TWEEN } from 'TWEEN';
+import { FontLoader } from 'FontLoader';
+import { TextGeometry } from 'TextGeometry';
+import { InteractionManager } from "three.interactive";
+import { Sky } from 'https://threejs.org/examples/jsm/objects/Sky.js';
+
+//------------------------------------------------------------------------------local imports
+
+import * as SHAPE from "./shapes.js";
+
+//______________________________________________________________________________scene
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color( "white" );
+// scene.fog = new THREE.Fog( "black", 0, 10 )
+
+//______________________________________________________________________________camera
+
+const camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+
+//______________________________________________________________________________renderer
+
+const renderer = new THREE.WebGLRenderer( { antialias: true } );
+renderer.setPixelRatio( window.devicePixelRatio );
+renderer.setSize( window.innerWidth, window.innerHeight );
+document.body.appendChild( renderer.domElement );
+
+//______________________________________________________________________________interaction manager
+
+const interactionManager = new InteractionManager(
+  renderer,
+  camera,
+  renderer.domElement
+);
+
+//______________________________________________________________________________lights
+
+const pointLight = new THREE.PointLight("white", 2);
+scene.add( pointLight );
+
+//______________________________________________________________________________geometry
+
+//------------------------------------------------------------------------------sky
+
+const canvas = document.createElement( 'canvas' );
+canvas.width = 1;
+canvas.height = 32;
+
+const context = canvas.getContext( '2d' );
+const gradient = context.createLinearGradient( 0, 0, 0, 32 );
+gradient.addColorStop( 0.0, 'MidnightBlue' );
+gradient.addColorStop( 0.1, 'DarkSlateBlue' );
+gradient.addColorStop( 0.5, 'black' );
+gradient.addColorStop( 1.0, 'MidnightBlue' );
+context.fillStyle = gradient;
+context.fillRect( 0, 0, 1, 32 );
+
+const sky = new THREE.Mesh(
+	new THREE.SphereGeometry( 10 ),
+	new THREE.MeshBasicMaterial( { map: new THREE.CanvasTexture( canvas ), side: THREE.BackSide } )
+);
+scene.add( sky );
+
+//------------------------------------------------------------------------------particles
+
+const geometry = new THREE.SphereGeometry( 0.05, 32, 16 );
+
+const whiteMaterial = new THREE.MeshPhongMaterial( {
+  color: "white"
+});
+
+const greenMaterial = new THREE.MeshPhongMaterial( {
+  color: "green"
+});
+
+const blueMaterial = new THREE.MeshPhongMaterial( {
+  color: "blue"
+});
+
+const particlesTotal = 675;
+let positions = [];
+const objects = [];
+let current = 0;
+
+for ( let i = 0; i < particlesTotal; i ++ ) {
+
+  if (i < 225) {
+
+    let inn = new THREE.Mesh( geometry, whiteMaterial );
+    scene.add( inn );
+    objects.push( inn );
+
+  } else if (i >= 225 && i < 450) {
+
+    let uba = new THREE.Mesh( geometry, greenMaterial );
+    scene.add( uba );
+    objects.push( uba );
+
+  } else {
+
+    let tec = new THREE.Mesh( geometry, blueMaterial );
+    scene.add( tec );
+    objects.push( tec );
+
+  };
+
+};
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -sphere shape
+
+const radius = 5;
+
+for ( let i = 0; i < particlesTotal; i ++ ) {
+
+	const phi = Math.acos( - 1 + ( 2 * i ) / particlesTotal );
+	const theta = Math.sqrt( particlesTotal * Math.PI ) * phi;
+
+	positions.push(
+		radius * Math.cos( theta ) * Math.sin( phi ),
+		radius * Math.sin( theta ) * Math.sin( phi ),
+		radius * Math.cos( phi )
+	);
+
+};
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -innubatec shape
+
+  const innubatec = SHAPE.innubatec.map (x => x * 1.5);
+	positions = positions.concat( innubatec );
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -recycle shape
+
+  const recycle = SHAPE.recycle.map (x => x * 4);
+  positions = positions.concat( recycle );
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -transition
+
+function transition() {
+
+	const offset = current * particlesTotal * 3;
+	const duration = 2000;
+  let transitions = 3
+
+	for ( let i = 0, j = offset; i < particlesTotal; i ++, j += 3 ) {
+
+		const object = objects[ i ];
+
+		new TWEEN.Tween( object.position )
+			.to( {
+				x: positions[ j ],
+				y: positions[ j + 1 ],
+				z: positions[ j + 2 ]
+			}, Math.random() * duration + duration )
+			.easing( TWEEN.Easing.Exponential.InOut )
+			.start();
+
+	};
+
+	new TWEEN.Tween( this )
+		.to( {}, duration * 3 )
+		.onComplete( transition )
+		.start();
+
+	current = ( current + 1 ) % transitions;
+
+};
+
+transition();
+
+//------------------------------------------------------------------------------menu
+
+class Navbar {
+  constructor(title = "Welcome", width = "100") {
+    this.parameters = {
+      title: title,
+			width: width
+		};
+  }
+}
+
+const loader = new FontLoader();
+loader.load('openSans.json', function ( font ) {
+
+  let bigtextSetting = {
+    font: font,
+    size: 1,
+    height: 0.2,
+    curveSegments: 8,
+    bevelEnabled: true,
+    bevelThickness: 0.04,
+    bevelSize: 0.02,
+    bevelSegments: 6
+  }
+
+  let smalltextSetting = {
+    font: font,
+    size: 0.3,
+    height: 0.1,
+    curveSegments: 8,
+    bevelEnabled: true,
+    bevelThickness: 0.02,
+    bevelSize: 0.01,
+    bevelSegments: 6
+  }
+
+  //Bienvenido
+
+  let text1Geo = new TextGeometry('Bienvenido', bigtextSetting);
+  let text1Mat = new THREE.MeshLambertMaterial({color: "MidnightBlue"});
+  let text1 = new THREE.Mesh(text1Geo,text1Mat);
+
+  text1Geo.computeBoundingBox();
+  const text1Offset = - 0.5 * ( text1Geo.boundingBox.max.x - text1Geo.boundingBox.min.x );
+
+  text1.position.set( text1Offset, 1 , -15 );
+  scene.add( text1 );
+
+  //Quienes somos
+
+  let text2Geo = new TextGeometry('Quienes Somos', smalltextSetting);
+  let text2Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text2 = new THREE.Mesh(text2Geo,text2Mat);
+
+  text2Geo.computeBoundingBox();
+  const text2Offset = - 0.5 * ( text2Geo.boundingBox.max.x - text2Geo.boundingBox.min.x );
+
+  text2.position.set( text2Offset - 4.5, -1 , -15 );
+  scene.add( text2 );
+
+  //Agenda
+
+  let text3Geo = new TextGeometry('Agenda', smalltextSetting);
+  let text3Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text3 = new THREE.Mesh(text3Geo,text3Mat);
+
+  text3Geo.computeBoundingBox();
+  const text3Offset = - 0.5 * ( text3Geo.boundingBox.max.x - text3Geo.boundingBox.min.x );
+
+  text3.position.set( text3Offset - 1.7, -1 , -15 );
+  scene.add( text3 );
+
+  //PGR
+
+  let text4Geo = new TextGeometry('PGR', smalltextSetting);
+  let text4Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text4 = new THREE.Mesh(text4Geo,text4Mat);
+
+  text4Geo.computeBoundingBox();
+  const text4Offset = - 0.5 * ( text4Geo.boundingBox.max.x - text4Geo.boundingBox.min.x );
+
+  text4.position.set( text4Offset, -1 , -15 );
+  scene.add( text4 );
+
+  //Contactanos
+
+  let text5Geo = new TextGeometry('Contacto', smalltextSetting);
+  let text5Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text5 = new THREE.Mesh(text5Geo,text5Mat);
+
+  text5Geo.computeBoundingBox();
+  const text5Offset = - 0.5 * ( text5Geo.boundingBox.max.x - text5Geo.boundingBox.min.x );
+
+  text5.position.set( text5Offset + 1.8, -1 , -15 );
+  scene.add( text5 );
+
+  //Ubatec S.A.
+
+  let text6Geo = new TextGeometry('UBATEC S.A.', smalltextSetting);
+  let text6Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text6 = new THREE.Mesh(text6Geo,text6Mat);
+
+  text6Geo.computeBoundingBox();
+  const text6Offset = - 0.5 * ( text6Geo.boundingBox.max.x - text6Geo.boundingBox.min.x );
+
+  text6.position.set( text6Offset + 4.5, -1 , -15 );
+  scene.add( text6 );
+
+});
+
+const cgeometry = new THREE.CapsuleGeometry( 0.4, 0.6, 10, 20 );
+const cmaterial = new THREE.MeshPhongMaterial({
+  color: "purple",
+  transparent: true,
+  opacity: 0.2
+});
+
+const capsule = new THREE.Mesh( cgeometry, cmaterial );
+capsule.position.set( 0, -0.87 , -15 );
+capsule.rotation.z = Math.PI / 2;
+scene.add( capsule );
+
+capsule.addEventListener("mouseover", (event) => { event.target.material = new THREE.MeshPhongMaterial({ color: "red", transparent: true, opacity: 0.35}); });
+capsule.addEventListener("mouseout", (event) => { event.target.material = cmaterial; });
+interactionManager.add(capsule);
+
+const c1g = new THREE.CapsuleGeometry( 0.4, 1, 10, 20 );
+const c1 = new THREE.Mesh( c1g, cmaterial );
+c1.position.set( -1.7, -0.87 , -15 );
+c1.rotation.z = Math.PI / 2;
+scene.add( c1 );
+
+//______________________________________________________________________________moveCamera
+
+function moveCamera() {
+
+  const t = document.body.getBoundingClientRect().top;
+
+  camera.position.z = t * 0.01 + 5;
+
+  sky.position.z = t * 0.01 ;
+
+};
+
+document.body.onscroll = moveCamera;
+moveCamera();
+
+//______________________________________________________________________________animate
+
+function animate() {
+
+	requestAnimationFrame( animate );
+
+  // scene.traverse( function(child) {
+  // if(camera.position.distanceToSquared(child.position) < 100){
+  //     child.visible = true;
+  // } else {
+  //     child.visible = false;
+  // }
+  // });
+
+  TWEEN.update();
+  interactionManager.update();
+
+	const time = performance.now();
+
+	for ( let i = 0, l = objects.length; i < l; i ++ ) {
+
+		const object = objects[ i ];
+		const scale = Math.sin( ( Math.floor( object.position.x ) + time ) * 0.002 ) * 0.3 + 1;
+		object.scale.set( scale, scale, scale );
+
+	};
+
+	renderer.render( scene, camera );
+
+};
+
+animate();
+
+</script>
+<!--____________________________________________________________________________/script -->
+
+</body>
+<!--____________________________________________________________________________/body -->
+
+</html>
+<!--____________________________________________________________________________/html -->

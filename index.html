@@ -64,13 +64,15 @@ canvas {
 
 <body><!--______________________________________________________________________body -->
 
-<div class="space"></div>
+<div class="space">
+  <p>hola</p>
+</div>
 
 <!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ importmap -->
 <script type="importmap">
   {
     "imports": {
-      "three": "https://unpkg.com/three@0.139.0/build/three.module.js",
+      "three": "https://unpkg.com/three@0.141.0/build/three.module.js",
       "TWEEN": "https://threejs.org/examples/jsm/libs/tween.module.min.js",
       "FontLoader": "https://threejs.org/examples/jsm/loaders/FontLoader.js",
       "TextGeometry": "https://threejs.org/examples/jsm/geometries/TextGeometry.js",
@@ -104,9 +106,18 @@ import * as SHAPE from "./shapes.js";
 
 //______________________________________________________________________________scene
 
+function toColor(num) {
+    num >>>= 0;
+    var b = num & 0xFF,
+        g = (num & 0xFF00) >>> 8,
+        r = (num & 0xFF0000) >>> 16,
+        a = ( (num & 0xFF000000) >>> 24 ) / 255 ;
+    return "rgba(" + [r, g, b, a].join(",") + ")";
+};
+
 const scene = new THREE.Scene();
 scene.background = new THREE.Color( "white" );
-// scene.fog = new THREE.Fog( "black", 0, 10 )
+// scene.fog = new THREE.Fog( "white", 0, 30 )
 
 //______________________________________________________________________________camera
 
@@ -147,32 +158,42 @@ canvas.height = 32;
 
 const context = canvas.getContext( '2d' );
 const gradient = context.createLinearGradient( 0, 0, 0, 32 );
-gradient.addColorStop( 0.0, 'MidnightBlue' );
-gradient.addColorStop( 0.1, 'DarkSlateBlue' );
-gradient.addColorStop( 0.5, 'black' );
-gradient.addColorStop( 1.0, 'MidnightBlue' );
+gradient.addColorStop( 0.2, 'MidnightBlue' );
+gradient.addColorStop( 0.5, 'rgba(0,0,0,0)');
+gradient.addColorStop( 0.8, "MidnightBlue" );
 context.fillStyle = gradient;
 context.fillRect( 0, 0, 1, 32 );
 
 const sky = new THREE.Mesh(
 	new THREE.SphereGeometry( 10 ),
-	new THREE.MeshBasicMaterial( { map: new THREE.CanvasTexture( canvas ), side: THREE.BackSide } )
+	new THREE.MeshBasicMaterial( {
+    map: new THREE.CanvasTexture( canvas ),
+    side: THREE.BackSide,
+    transparent: true,
+    opacity: 0.5
+  } )
 );
-scene.add( sky );
+// scene.add( sky );
 
 //------------------------------------------------------------------------------particles
 
 const geometry = new THREE.SphereGeometry( 0.05, 32, 16 );
 
 const whiteMaterial = new THREE.MeshPhongMaterial( {
-  color: "white"
+  transparent: true,
+  opacity: 0.8,
+  color: "black"
 });
 
 const greenMaterial = new THREE.MeshPhongMaterial( {
+  transparent: true,
+  opacity: 0.6,
   color: "green"
 });
 
 const blueMaterial = new THREE.MeshPhongMaterial( {
+  transparent: true,
+  opacity: 0.6,
   color: "blue"
 });
 
@@ -207,7 +228,7 @@ for ( let i = 0; i < particlesTotal; i ++ ) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -sphere shape
 
-const radius = 5;
+const radius = 7;
 
 for ( let i = 0; i < particlesTotal; i ++ ) {
 
@@ -217,7 +238,7 @@ for ( let i = 0; i < particlesTotal; i ++ ) {
 	positions.push(
 		radius * Math.cos( theta ) * Math.sin( phi ),
 		radius * Math.sin( theta ) * Math.sin( phi ),
-		radius * Math.cos( phi )
+		radius * Math.cos( phi ) - 0.8
 	);
 
 };
@@ -229,7 +250,7 @@ for ( let i = 0; i < particlesTotal; i ++ ) {
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -recycle shape
 
-  const recycle = SHAPE.recycle.map (x => x * 4);
+  const recycle = SHAPE.recycle.map (x => x * 6);
   positions = positions.concat( recycle );
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -transition
@@ -237,7 +258,7 @@ for ( let i = 0; i < particlesTotal; i ++ ) {
 function transition() {
 
 	const offset = current * particlesTotal * 3;
-	const duration = 2000;
+	const duration = 1200;
   let transitions = 3
 
 	for ( let i = 0, j = offset; i < particlesTotal; i ++, j += 3 ) {
@@ -268,14 +289,71 @@ transition();
 
 //------------------------------------------------------------------------------menu
 
-class Navbar {
-  constructor(title = "Welcome", width = "100") {
+const font = async (fontFile) => {
+  let font = await new Promise(res => new FontLoader().load(fontFile, res))
+  return font;
+};
+
+const text = (font, string) => {
+
+  let textSetting = {
+    font: font,
+    size: 1,
+    height: 1,
+    curveSegments: 8,
+    bevelEnabled: true,
+    bevelThickness: 0.04,
+    bevelSize: 0.02,
+    bevelSegments: 6
+  };
+
+  let geometry = new TextGeometry( string, textSetting );
+  let material = new THREE.MeshLambertMaterial( { color: "MidnightBlue" } );
+  let text = new THREE.Mesh( geometry,material );
+
+  return text;
+
+};
+
+const button = (font, string) => {
+
+  let textSetting = {
+    font: font,
+    size: 1,
+    height: 1,
+    curveSegments: 8,
+    bevelEnabled: true,
+    bevelThickness: 0.04,
+    bevelSize: 0.02,
+    bevelSegments: 6
+  };
+
+  let geometry = new TextGeometry( string, textSetting );
+  let material = new THREE.MeshLambertMaterial( { color: "MidnightBlue" } );
+  let text = new THREE.Mesh( geometry,material );
+
+  return text;
+
+};
+
+
+
+class Menu {
+  constructor(title = "Welcome", width = 100, height = 100) {
+
+    this.type = 'text';
+
     this.parameters = {
       title: title,
-			width: width
+			width: width,
+      height: height
 		};
-  }
-}
+
+  };
+};
+
+// const openSans = await font('openSans.json');
+// scene.add(text( openSans, "holaa" ));
 
 const loader = new FontLoader();
 loader.load('openSans.json', function ( font ) {
@@ -289,7 +367,7 @@ loader.load('openSans.json', function ( font ) {
     bevelThickness: 0.04,
     bevelSize: 0.02,
     bevelSegments: 6
-  }
+  };
 
   let smalltextSetting = {
     font: font,
@@ -300,7 +378,7 @@ loader.load('openSans.json', function ( font ) {
     bevelThickness: 0.02,
     bevelSize: 0.01,
     bevelSegments: 6
-  }
+  };
 
   //Bienvenido
 
@@ -311,67 +389,67 @@ loader.load('openSans.json', function ( font ) {
   text1Geo.computeBoundingBox();
   const text1Offset = - 0.5 * ( text1Geo.boundingBox.max.x - text1Geo.boundingBox.min.x );
 
-  text1.position.set( text1Offset, 1 , -15 );
+  text1.position.set( text1Offset, 1 , -20 );
   scene.add( text1 );
 
   //Quienes somos
 
   let text2Geo = new TextGeometry('Quienes Somos', smalltextSetting);
-  let text2Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text2Mat = new THREE.MeshLambertMaterial({color: "Navy"});
   let text2 = new THREE.Mesh(text2Geo,text2Mat);
 
   text2Geo.computeBoundingBox();
   const text2Offset = - 0.5 * ( text2Geo.boundingBox.max.x - text2Geo.boundingBox.min.x );
 
-  text2.position.set( text2Offset - 4.5, -1 , -15 );
+  text2.position.set( text2Offset - 4.5, -1 , -20 );
   scene.add( text2 );
 
   //Agenda
 
   let text3Geo = new TextGeometry('Agenda', smalltextSetting);
-  let text3Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text3Mat = new THREE.MeshLambertMaterial({color: "Navy"});
   let text3 = new THREE.Mesh(text3Geo,text3Mat);
 
   text3Geo.computeBoundingBox();
   const text3Offset = - 0.5 * ( text3Geo.boundingBox.max.x - text3Geo.boundingBox.min.x );
 
-  text3.position.set( text3Offset - 1.7, -1 , -15 );
+  text3.position.set( text3Offset - 1.7, -1 , -20 );
   scene.add( text3 );
 
   //PGR
 
   let text4Geo = new TextGeometry('PGR', smalltextSetting);
-  let text4Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text4Mat = new THREE.MeshLambertMaterial({color: "Navy"});
   let text4 = new THREE.Mesh(text4Geo,text4Mat);
 
   text4Geo.computeBoundingBox();
   const text4Offset = - 0.5 * ( text4Geo.boundingBox.max.x - text4Geo.boundingBox.min.x );
 
-  text4.position.set( text4Offset, -1 , -15 );
+  text4.position.set( text4Offset, -1 , -20 );
   scene.add( text4 );
 
   //Contactanos
 
   let text5Geo = new TextGeometry('Contacto', smalltextSetting);
-  let text5Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text5Mat = new THREE.MeshLambertMaterial({color: "Navy"});
   let text5 = new THREE.Mesh(text5Geo,text5Mat);
 
   text5Geo.computeBoundingBox();
   const text5Offset = - 0.5 * ( text5Geo.boundingBox.max.x - text5Geo.boundingBox.min.x );
 
-  text5.position.set( text5Offset + 1.8, -1 , -15 );
+  text5.position.set( text5Offset + 1.8, -1 , -20 );
   scene.add( text5 );
 
   //Ubatec S.A.
 
   let text6Geo = new TextGeometry('UBATEC S.A.', smalltextSetting);
-  let text6Mat = new THREE.MeshLambertMaterial({color: "white"});
+  let text6Mat = new THREE.MeshLambertMaterial({color: "Navy"});
   let text6 = new THREE.Mesh(text6Geo,text6Mat);
 
   text6Geo.computeBoundingBox();
   const text6Offset = - 0.5 * ( text6Geo.boundingBox.max.x - text6Geo.boundingBox.min.x );
 
-  text6.position.set( text6Offset + 4.5, -1 , -15 );
+  text6.position.set( text6Offset + 4.5, -1 , -20 );
   scene.add( text6 );
 
 });
@@ -383,8 +461,9 @@ const cmaterial = new THREE.MeshPhongMaterial({
   opacity: 0.2
 });
 
+
 const capsule = new THREE.Mesh( cgeometry, cmaterial );
-capsule.position.set( 0, -0.87 , -15 );
+capsule.position.set( 0, -0.87 , -20 );
 capsule.rotation.z = Math.PI / 2;
 scene.add( capsule );
 
@@ -393,16 +472,22 @@ capsule.addEventListener("mouseout", (event) => { event.target.material = cmater
 interactionManager.add(capsule);
 
 const c1g = new THREE.CapsuleGeometry( 0.4, 1, 10, 20 );
-const c1 = new THREE.Mesh( c1g, cmaterial );
-c1.position.set( -1.7, -0.87 , -15 );
-c1.rotation.z = Math.PI / 2;
-scene.add( c1 );
+const capsule1 = new THREE.Mesh( c1g, cmaterial );
+capsule1.position.set( -1.7, -0.87 , -20 );
+capsule1.rotation.z = Math.PI / 2;
+scene.add( capsule1 );
+
+capsule1.addEventListener("mouseover", (event) => { event.target.material = new THREE.MeshPhongMaterial({ color: "red", transparent: true, opacity: 0.35}); });
+capsule1.addEventListener("mouseout", (event) => { event.target.material = cmaterial; });
+interactionManager.add(capsule1);
 
 //______________________________________________________________________________moveCamera
 
 function moveCamera() {
 
   const t = document.body.getBoundingClientRect().top;
+
+  pointLight.position.z = t * 0.01 + 5;
 
   camera.position.z = t * 0.01 + 5;
 
@@ -419,13 +504,13 @@ function animate() {
 
 	requestAnimationFrame( animate );
 
-  // scene.traverse( function(child) {
-  // if(camera.position.distanceToSquared(child.position) < 100){
-  //     child.visible = true;
-  // } else {
-  //     child.visible = false;
-  // }
-  // });
+  scene.traverse( function(child) {
+  if(camera.position.distanceToSquared(child.position) < 300){
+      child.visible = true;
+  } else {
+      child.visible = false;
+  }
+  });
 
   TWEEN.update();
   interactionManager.update();

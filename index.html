@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!--____________________________________________________________html -->
+<html><!--______________________________________________________________________html -->
 
 <head><!--______________________________________________________________________head -->
 
@@ -8,17 +8,18 @@
 <meta name="viewport" content="width=device-width,user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
 <!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ style -->
+
 <style>
 
 body {
   margin: 0;
-  overflow: overlay;
 }
 
 canvas {
   position: fixed;
   top: 0;
   left: 0;
+  z-index: -1;
 }
 
 .space {
@@ -26,15 +27,26 @@ canvas {
   width: 100%;
   height: 100%;
   margin-top: 3000px;
-  background-color: red;
+}
 
+.gui {
+  position: fixed;
+  width: 100%;
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
 
-  text-align: center;
-  font-size: 18px;
+  justify-content: center;
+  background: transparent;
+}
+
+.gui div {
+  padding: 30px;
+
+  margin-left: 15px;
+  margin-right: 15px;
+  margin-bottom: 10px;
+
+  border: 1px outset;
 }
 
 ::-webkit-scrollbar {
@@ -50,7 +62,6 @@ canvas {
 ::-webkit-scrollbar-thumb {
   background: MidnightBlue;
   border-radius: 10px;
-
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -64,11 +75,20 @@ canvas {
 
 <body><!--______________________________________________________________________body -->
 
-<div class="space">
-  <p>hola</p>
+<div class="space"></div>
+
+<div class="gui" style="flex-direction: row; align-items: flex-end;">
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
 </div>
 
 <!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ importmap -->
+
 <script type="importmap">
   {
     "imports": {
@@ -80,16 +100,32 @@ canvas {
     }
   }
 </script>
+
 <!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ /importmap -->
 
-<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ other modules -->
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ modules -->
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.js"></script>
 <script src="https://smtpjs.com/v3/smtp.js"></script>
 
-<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ /other modules -->
+<!--_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ modules -->
 
 <script type="module">//________________________________________________________script
+
+//______________________________________________________________________________event listeners
+
+document.addEventListener("keydown", function(event) {
+  if (event.key === "m") {
+    let gui = document.getElementsByClassName('gui');
+    Array.from(gui).forEach( (x) => {
+      if (window.getComputedStyle(x).display === 'none' ) {
+        x.style.display = 'flex';
+      } else {
+        x.style.display = 'none';
+      };
+    });
+  };
+});
 
 //______________________________________________________________________________imports
 
@@ -100,24 +136,20 @@ import { TextGeometry } from 'TextGeometry';
 import { InteractionManager } from "three.interactive";
 import { Sky } from 'https://threejs.org/examples/jsm/objects/Sky.js';
 
-//------------------------------------------------------------------------------local imports
+//------------------------------------------------------------------------------local
 
 import * as SHAPE from "./shapes.js";
 
+//______________________________________________________________________________/imports
+
 //______________________________________________________________________________scene
 
-function toColor(num) {
-    num >>>= 0;
-    var b = num & 0xFF,
-        g = (num & 0xFF00) >>> 8,
-        r = (num & 0xFF0000) >>> 16,
-        a = ( (num & 0xFF000000) >>> 24 ) / 255 ;
-    return "rgba(" + [r, g, b, a].join(",") + ")";
+const rgb = (r, g, b) => {
+    return "rgb(" + [r, g, b].join(",") + ")";
 };
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color( "white" );
-// scene.fog = new THREE.Fog( "white", 0, 30 )
+scene.background = new THREE.Color(rgb(255, 255, 255));
 
 //______________________________________________________________________________camera
 
@@ -130,7 +162,11 @@ const camera = new THREE.PerspectiveCamera(
 
 //______________________________________________________________________________renderer
 
-const renderer = new THREE.WebGLRenderer( { antialias: true } );
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+});
+
 renderer.setPixelRatio( window.devicePixelRatio );
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
@@ -152,28 +188,28 @@ scene.add( pointLight );
 
 //------------------------------------------------------------------------------sky
 
-const canvas = document.createElement( 'canvas' );
-canvas.width = 1;
-canvas.height = 32;
-
-const context = canvas.getContext( '2d' );
-const gradient = context.createLinearGradient( 0, 0, 0, 32 );
-gradient.addColorStop( 0.2, 'MidnightBlue' );
-gradient.addColorStop( 0.5, 'rgba(0,0,0,0)');
-gradient.addColorStop( 0.8, "MidnightBlue" );
-context.fillStyle = gradient;
-context.fillRect( 0, 0, 1, 32 );
-
-const sky = new THREE.Mesh(
-	new THREE.SphereGeometry( 10 ),
-	new THREE.MeshBasicMaterial( {
-    map: new THREE.CanvasTexture( canvas ),
-    side: THREE.BackSide,
-    transparent: true,
-    opacity: 0.5
-  } )
-);
-// scene.add( sky );
+// const canvas = document.createElement( 'canvas' );
+// canvas.width = 1;
+// canvas.height = 32;
+//
+// const context = canvas.getContext( '2d' );
+// const gradient = context.createLinearGradient( 0, 0, 0, 32 );
+// gradient.addColorStop( 0.2, 'MidnightBlue' );
+// gradient.addColorStop( 0.5, 'rgba(0,0,0,0)');
+// gradient.addColorStop( 0.8, "MidnightBlue" );
+// context.fillStyle = gradient;
+// context.fillRect( 0, 0, 1, 32 );
+//
+// const sky = new THREE.Mesh(
+// 	new THREE.SphereGeometry( 10 ),
+// 	new THREE.MeshBasicMaterial( {
+//     map: new THREE.CanvasTexture( canvas ),
+//     side: THREE.BackSide,
+//     transparent: true,
+//     opacity: 0.5
+//   } )
+// );
+// // scene.add( sky );
 
 //------------------------------------------------------------------------------particles
 
@@ -290,7 +326,7 @@ transition();
 //------------------------------------------------------------------------------menu
 
 const font = async (fontFile) => {
-  let font = await new Promise(res => new FontLoader().load(fontFile, res))
+  let font = await new Promise(res => new FontLoader().load(fontFile, res));
   return font;
 };
 
@@ -315,26 +351,13 @@ const text = (font, string) => {
 
 };
 
-const button = (font, string) => {
-
-  let textSetting = {
-    font: font,
-    size: 1,
-    height: 1,
-    curveSegments: 8,
-    bevelEnabled: true,
-    bevelThickness: 0.04,
-    bevelSize: 0.02,
-    bevelSegments: 6
-  };
-
-  let geometry = new TextGeometry( string, textSetting );
-  let material = new THREE.MeshLambertMaterial( { color: "MidnightBlue" } );
-  let text = new THREE.Mesh( geometry,material );
-
-  return text;
-
-};
+// const button = (text, string) => {
+//
+//   const capsule = new THREE.Mesh( cgeometry, cmaterial );
+//   capsule.position.set( 0, -0.87 , -20 );
+//   capsule.rotation.z = Math.PI / 2;
+//
+// };
 
 
 
@@ -485,13 +508,19 @@ interactionManager.add(capsule1);
 
 function moveCamera() {
 
-  const t = document.body.getBoundingClientRect().top;
+  const t = (- document.body.getBoundingClientRect().top * 0.01).toFixed(2);
 
-  pointLight.position.z = t * 0.01 + 5;
+  console.log(t);
 
-  camera.position.z = t * 0.01 + 5;
+  pointLight.position.z = -t + 5;
 
-  sky.position.z = t * 0.01 ;
+  camera.position.z = -t + 5;
+
+  let r = 255 - Math.floor(t * 5);
+  let g = 255
+  let b = 255 - Math.floor(t * 3);
+
+  scene.background = new THREE.Color(rgb(r, g , b));
 
 };
 
